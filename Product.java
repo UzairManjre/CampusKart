@@ -1,140 +1,186 @@
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.io.*;
+import java.util.*;
 
-
-public class Product {
-//    •	price: double
-//•	description: String
-//•	sellerUsername: String
-//•	status: String (available/sold)
-static int trackIds = 230010;
-    String title;
-    String description;
-    String sellerUsername;
-    boolean status;
-    String category;
-    private int productid;
+public class Product implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private static int nextProductId = 24001; // Tracks the next product ID to assign
+    private int productId;
+    private String name;
     private double price;
-//    Methods:
-//• postProduct(String title, double price, String description, String sellerUsername): Saves a new product in products.txt.
-//•	searchProduct(String query): Searches for products by title or category.
-//•	buyProduct(int productID, String buyerUsername): Marks a product as sold and updates files accordingly.
+    private String description;
+    private String category;
+    private String condition;
 
-    public void postProduct(String title, double price, String category, String description, String seller) {
-        this.productid = trackIds;
-        this.title = title;
+    public Product(String name, double price, String description, String category, String condition) {
+        this.productId = nextProductId++;
+        this.name = name;
         this.price = price;
-        this.category = category;
         this.description = description;
-        this.sellerUsername = seller;
-        this.status = true;
-        trackIds ++;
-
-
+        this.category = category;
+        this.condition = condition;
     }
 
-    void displayProduct() {
-
-        System.out.println(this.productid);
-        System.out.println(this.title);
-        System.out.println(this.price);
-        System.out.println(this.category);
-        System.out.println(this.description);
-        System.out.println(this.status);
+    // Getters
+    public int getProductId() {
+        return productId;
     }
 
-    public Product searchProduct(String title, String category, int productid, List<Product> Products) {
-        return Products.stream()
-                .filter(p -> (title == null || p.title.equalsIgnoreCase(title)) &&
-                        (category == null || p.category.equalsIgnoreCase(category)) &&
-                        (productid == -1 || p.productid == productid))
-//                .peek(p -> System.out.println("Product found: ID " + p.productid))
-                .findFirst()
-                .orElse(null);
+    public String getName() {
+        return name;
     }
 
+    public double getPrice() {
+        return price;
+    }
 
-    void buyProduct(String title, List<Product> Products) {
-        if (searchProduct(title, null, -1, Products) == null) {
-            System.out.println("the product doest exist");
-            return;
+    public String getDescription() {
+        return description;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public String getCondition() {
+        return condition;
+    }
+
+    // Setters
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public void setCondition(String condition) {
+        this.condition = condition;
+    }
+
+    // Load Products from File
+    @SuppressWarnings("unchecked")
+    public static List<Product> loadProducts() {
+        List<Product> products = new ArrayList<>();
+        File file = new File("products.dat");
+
+        if (!file.exists()) {
+            System.out.println("products.dat does not exist. Creating a new file with sample data.");
+            products.add(new Product("Laptop", 999.99, "High-performance laptop", "Electronics", "New"));
+            products.add(new Product("Phone", 499.99, "Latest smartphone", "Electronics", "New"));
+            products.add(new Product("Headphones", 99.99, "Noise-cancelling headphones", "Electronics", "Refurbished"));
+            saveProducts(products);
+        } else {
+            try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(file))) {
+                Object obj = in.readObject();
+                if (obj instanceof List<?>) {
+                    products = (List<Product>) obj;
+                    // Update nextProductId to avoid duplicates
+                    nextProductId = products.stream().mapToInt(Product::getProductId).max().orElse(0) + 1;
+                }
+            } catch (IOException | ClassNotFoundException e) {
+                System.out.println("Error reading products.dat. Starting with an empty product list.");
+                e.printStackTrace();
+            }
         }
+        return products;
+    }
 
+    // Save Products to File
+    public static void saveProducts(List<Product> products) {
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("products.dat"))) {
+            out.writeObject(products);
+        } catch (IOException e) {
+            System.out.println("Error saving products.dat.");
+            e.printStackTrace();
+        }
+    }
 
-        for (Product p : Products) {
-            if (p.title.equalsIgnoreCase(title)) {
-                if (!p.status) {
-                    System.out.println("Product not available for sale ");
-                    return;
-                }
-
-                System.out.println("do you wish to buy " + title + " ?");
-                System.out.println("Press 'y' to continue press 'n' to cancel");
-                Scanner scanner = new Scanner(System.in);
-                char ch = scanner.next().charAt(0);
-                if (ch == 'y' || ch == 'Y') {
-                    System.out.println("enter y if money is sent or enter n if the money is not sent");
-                    char ch2 = scanner.next().charAt(0);
-                    if (ch2 == 'y' || ch2 == 'Y') {
-                        p.status = false;
-                        System.out.println("Product purchase successfully");
-
-                    }
-                    if (ch2 == 'n' || ch2 == 'N'){
-                        System.out.println("payment failed please try again later ");
-                    }
-
-                }
-                else {
-                    return;
-                }
+    // Display All Products
+    public static void displayAllProducts() {
+        List<Product> products = loadProducts();
+        if (products.isEmpty()) {
+            System.out.println("No products available.");
+        } else {
+            System.out.println("\nAvailable Products:");
+            for (Product p : products) {
+                System.out.println("ID: " + p.getProductId() + " - Name: " + p.getName() + " - Price: $" + p.getPrice() +
+                        " - Category: " + p.getCategory() + " - Condition: " + p.getCondition() +
+                        " - Description: " + p.getDescription());
             }
         }
     }
-    public static void main(String[] args) {
-        // Create a list of products
-        List<Product> Products = new ArrayList<>();
 
-        // Create some products
-        Product product1 = new Product();
-        product1.postProduct("Laptop", 1000.00, "Electronics", "High-performance laptop", "seller123");
-        Products.add(product1);
-
-        Product product2 = new Product();
-        product2.postProduct("Phone", 500.00, "Electronics", "Smartphone with great camera", "seller456");
-        Products.add(product2);
-
-        Product product3 = new Product();
-        product3.postProduct("Shoes", 50.00, "Fashion", "Comfortable running shoes", "seller789");
-        Products.add(product3);
-
-        // Display all products
-        System.out.println("Available Products:");
-        for (Product p : Products) {
-            p.displayProduct();
-            System.out.println();
+    // Find Product by ID
+    public static Product findProductById(int productId) {
+        List<Product> products = loadProducts();
+        for (Product p : products) {
+            if (p.getProductId() == productId) {
+                return p;
+            }
         }
-
-        // Search for a product
-        String searchQuery = "Laptop";
-        System.out.println("Searching for product: " + searchQuery);
-        Product searchedProduct = product1.searchProduct(searchQuery, null, -1, Products);
-        if (searchedProduct != null) {
-            System.out.println("Found product: " + searchedProduct.title);
-        } else {
-            System.out.println("Product not found.");
-        }
-
-        // Attempt to buy a product
-        String buyProductTitle = "Laptop";
-        product1.buyProduct(buyProductTitle, Products); // Test purchasing a product
-
-        // Check if product status is updated
-        System.out.println("\nUpdated Products:");
-        for (Product p : Products) {
-            p.displayProduct();
-            System.out.println();
-        }
+        return null;
     }
+
+    // Add a new product
+    public static void addProduct(String name, double price, String description, String category, String condition) {
+        List<Product> products = loadProducts();
+        Product newProduct = new Product(name, price, description, category, condition);
+        products.add(newProduct);
+        saveProducts(products);
+        System.out.println("Product added successfully!");
+    }
+
+    // Remove a product by ID
+    public static void removeProduct(int productId) {
+        List<Product> products = loadProducts();
+        products.removeIf(p -> p.getProductId() == productId);
+        saveProducts(products);
+        System.out.println("Product removed successfully!");
+    }
+
+    // Buy Product Method
+    public static void buyProduct(Users user, int productId) {
+        if (user.getUsername() == null) {
+            System.out.println("You must be logged in to buy products.");
+            return;
+        }
+
+        List<Product> products = loadProducts();
+        Product selectedProduct = null;
+
+        Iterator<Product> iterator = products.iterator();
+        while (iterator.hasNext()) {
+            Product p = iterator.next();
+            if (p.getProductId() == productId) {
+                selectedProduct = p;
+                System.out.println("Do you wish to purchase " + selectedProduct.getName() + "? (y/n)");
+                Scanner scanner = new Scanner(System.in);
+                char ch = scanner.next().charAt(0);
+                if (ch == 'n' || ch == 'N') {
+                    return;
+                }
+
+                System.out.println("Money transferring...");
+                user.addPurchase(selectedProduct.getName());
+
+                iterator.remove(); // Removes the product from the list
+                saveProducts(products); // Save the updated product list
+
+                System.out.println("Purchase successful! " + selectedProduct.getName() + " has been removed from the listing.");
+                return;
+            }
+        }
+
+        System.out.println("Product not found.");
+    }
+
 }

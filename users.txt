@@ -1,1 +1,6 @@
 john_doe,password123,john@example.com
+Uzair,Uzair123,uzairmanjre86@gmail.com
+john_doe,password123,john@example.com
+parin shah,diti<3,rishishah@gmail.com
+uzair,8888,iii
+jeff,123,jeff22@gmail.com
